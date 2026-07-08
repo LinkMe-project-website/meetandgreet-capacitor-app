@@ -1,0 +1,23 @@
+workflows:
+  meetandgreet-android:
+    name: Meet & Greet - Android Build
+    max_build_duration: 30
+    instance_type: linux_x2
+    environment:
+      node: latest
+    scripts:
+      - name: Install Capacitor dependencies
+        script: |
+          npm install
+          npx cap sync android
+      - name: Build debug APK
+        script: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com

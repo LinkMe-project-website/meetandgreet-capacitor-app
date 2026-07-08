@@ -1,0 +1,13 @@
+{
+  "appId": "com.meetandgreet.app",
+  "appName": "Meet & Greet",
+  "webDir": "www",
+  "server": {
+    "url": "https://linkme-project-website.github.io/SMMT-advance/",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#ffffff"
+  }
+}
