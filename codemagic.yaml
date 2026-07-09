@@ -2,7 +2,6 @@ workflows:
   meetandgreet-android:
     name: Meet & Greet - Android Build
     max_build_duration: 30
-    instance_type: linux
     environment:
       node: latest
     scripts:
