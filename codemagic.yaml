@@ -8,6 +8,7 @@ workflows:
       - name: Install Capacitor dependencies
         script: |
           npm install
+          npm install @capacitor/cli
           npx cap sync android
       - name: Build debug APK
         script: |
