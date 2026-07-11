@@ -1,4 +1,4 @@
-// MEET & GREET — app.js
+// VORTEXIA — app.js
 // Auth (email+password only), dashboard, meetings, chat, whiteboard, profile.
 
 let currentUser = null;
@@ -243,10 +243,12 @@ async function onLoggedIn(user) {
   $("app").classList.remove("hidden");
   populateTimezones($("mTimezone"));
   populateTimezones($("pTimezone"));
+  startPresenceHeartbeat();
   await loadPlans();
   await loadProfile();
   await loadMeetings();
   await loadChatThreads();
+  renderActiveStatusBar();
   await loadCallHistory();
   await loadMutedChats(); // Phase 3: load muted chats
   refreshNotifBadge();
@@ -296,7 +298,7 @@ bootstrapSession();
 // ---------------------------------------------------------------------------
 // Navigation
 // ---------------------------------------------------------------------------
-const VIEW_TITLES = { dashboard: "Dashboard", meetings: "Meetings", chat: "Chat", recordings: "Recordings", notifications: "Notifications", whiteboard: "Whiteboard", profile: "Profile", more: "More" };
+const VIEW_TITLES = { dashboard: "Home", meetings: "Meetings", chat: "Chats", recordings: "Recordings", notifications: "Notifications", whiteboard: "Whiteboard", profile: "Profile", more: "Community" };
 
 function setActiveView(view) {
   document.querySelectorAll(".navTab").forEach(b => b.classList.toggle("active", b.dataset.view === view));
@@ -306,7 +308,8 @@ function setActiveView(view) {
   if (view === "profile") $("pageSubtitle").textContent = "Account & settings";
   else if (view === "notifications") { $("pageSubtitle").textContent = ""; loadNotifications(); }
   else if (view === "recordings") { $("pageSubtitle").textContent = ""; renderRecordingsList(); }
-  else if (view === "more") { $("pageSubtitle").textContent = "Feed, jobs & discussions"; loadFeed(); loadJobs(); loadForum(); }
+  else if (view === "dashboard") { $("pageSubtitle").textContent = ""; loadFeed(); }
+  else if (view === "more") { $("pageSubtitle").textContent = "Marketplace, forum & announcements"; loadFeed(); loadJobs(); loadForum(); loadCommunityStats(); }
   else $("pageSubtitle").textContent = "";
   if (view === "whiteboard" && !wbRoomId) renderWhiteboardPicker();
 }
@@ -333,9 +336,11 @@ function updateDashboardSubtitle() {
   $("pageSubtitle").textContent = `${greeting} • ${today}`;
 }
 
-$("qaSchedule").addEventListener("click", () => document.querySelector('[data-view="meetings"]').click());
-$("qaChat").addEventListener("click", () => document.querySelector('[data-view="chat"]').click());
+$("qaSchedule").addEventListener("click", () => setActiveView("meetings"));
+$("qaRecordings").addEventListener("click", () => setActiveView("recordings"));
 $("qaInstant").addEventListener("click", startInstantMeeting);
+$("backFromMeetings").addEventListener("click", () => setActiveView("dashboard"));
+$("backFromRecordings").addEventListener("click", () => setActiveView("dashboard"));
 
 // ---------------------------------------------------------------------------
 // Profile
@@ -423,7 +428,7 @@ $("btnAccount").addEventListener("click", () => {
 });
 
 async function doDeleteAccount() {
-  if (!confirm("This will permanently delete your MEET & GREET account, including your profile, meetings, chats, and messages. This cannot be undone. Continue?")) return;
+  if (!confirm("This will permanently delete your VORTEXIA account, including your profile, meetings, chats, and messages. This cannot be undone. Continue?")) return;
   const { data: sessionData } = await supabaseClient.auth.getSession();
   const token = sessionData?.session?.access_token;
   if (!token) { showToast("Your session expired — please log in again."); return; }
@@ -512,10 +517,10 @@ function openTextModal(title, html) {
 
 $("btnTermsOfUse").addEventListener("click", () => openTextModal("Terms of use", `
   <p><strong>Last updated:</strong> ${APP_BUILD_DATE}</p>
-  <p>By using MEET &amp; GREET you agree to use it lawfully, treat other users respectfully, and not use it to harass, spam, or share content that violates our Community Guidelines.</p>
+  <p>By using VORTEXIA you agree to use it lawfully, treat other users respectfully, and not use it to harass, spam, or share content that violates our Community Guidelines.</p>
   <p>You're responsible for what you post/say in meetings, chats, and calls. We may suspend or remove accounts that violate these terms or the law.</p>
   <p>The Free plan and paid plans (Essential/Growth/Business) are described in Profile → Membership; prices and features may change with notice.</p>
-  <p>MEET &amp; GREET is provided "as is" during active development — features may change or be temporarily unavailable while we improve the app.</p>
+  <p>VORTEXIA is provided "as is" during active development — features may change or be temporarily unavailable while we improve the app.</p>
   <p>Contact: ${SUPPORT_EMAIL}</p>
 `));
 
@@ -540,7 +545,7 @@ $("btnCommunityGuidelines").addEventListener("click", () => openTextModal("Commu
 $("btnSafetyAdvice").addEventListener("click", () => openTextModal("Safety advice", `
   <p><strong>Platform rule violations:</strong> block the user (Settings → Blocklist) and report it to us via Send feedback.</p>
   <p><strong>About your information:</strong> only people you're meeting/chatting with can see relevant data; see Settings → Privacy policy for details.</p>
-  <p><strong>Staying safe on MEET &amp; GREET:</strong> don't share passwords or one-time codes with anyone, verify who you're talking to before sharing sensitive info, and use Privacy control to limit who can reach you.</p>
+  <p><strong>Staying safe on VORTEXIA:</strong> don't share passwords or one-time codes with anyone, verify who you're talking to before sharing sensitive info, and use Privacy control to limit who can reach you.</p>
   <p><strong>About VIP:</strong> VIP Verified is a paid membership tier, not an identity verification of the other person — stay cautious regardless of badges.</p>
   <p><strong>Legal &amp; safety:</strong> for urgent safety concerns involving illegal activity, contact local authorities directly in addition to reporting to us.</p>
 `));
@@ -565,7 +570,7 @@ async function openProfileView(userId) {
 
   $("profileViewBody").innerHTML = `
     <div class="profileViewAvatar">${p.avatar_url ? `<img src="${escapeHtml(p.avatar_url)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>` : initial}</div>
-    <div class="profileViewName">${escapeHtml(p.full_name || "MEET & GREET user")}</div>
+    <div class="profileViewName">${escapeHtml(p.full_name || "VORTEXIA user")}</div>
     <div class="profileViewMeta">MG ID ${escapeHtml(p.mg_id || "—")}${p.vip_status === "active" || p.vip_status === "trialing" ? " • VIP Verified" : ""}</div>
     <div class="profileViewMeta">
       ${p.is_active === null ? "" : `<span class="profileViewStatusDot ${p.is_active ? "isActive" : ""}"></span>${p.is_active ? "Active now" : "Offline"}`}
@@ -591,7 +596,7 @@ $("btnPrivacyBlocks").addEventListener("click", openBlockedUsersModal);
 async function openBlockedUsersModal() {
   openModal(`
     <div class="modalTitle">Privacy — Blocked users</div>
-    <div class="itemMeta" style="margin-bottom:12px">Blocked people can no longer message or call you. Type their MEET & GREET email to block someone.</div>
+    <div class="itemMeta" style="margin-bottom:12px">Blocked people can no longer message or call you. Type their VORTEXIA email to block someone.</div>
     <div class="field"><label>Email to block</label><input type="email" id="blockEmailInput" placeholder="someone@example.com" /></div>
     <button class="btn btnDanger btnBlock" id="btnBlockSubmit" style="margin-bottom:16px">Block this person</button>
     <div class="cardTitle" style="font-size:13px;margin-bottom:6px">Currently blocked</div>
@@ -610,7 +615,7 @@ async function blockUserByEmail() {
   if (!email) return;
   const { data: found } = await supabaseClient.rpc("lookup_profile_by_email", { p_email: email });
   const match = Array.isArray(found) ? found[0] : found;
-  if (!match || !match.id) { showToast("No MEET & GREET account found with that email."); return; }
+  if (!match || !match.id) { showToast("No VORTEXIA account found with that email."); return; }
   if (match.id === currentUser.id) { showToast("You can't block yourself."); return; }
   const { error } = await supabaseClient.from("blocked_users").insert({ blocker_id: currentUser.id, blocked_id: match.id });
   if (error) { showToast(error.code === "23505" ? "Already blocked." : error.message); return; }
@@ -642,14 +647,14 @@ async function renderBlockList() {
 
 // --- Send feedback ---
 $("btnFeedback").addEventListener("click", () => {
-  const subject = encodeURIComponent("MEET & GREET Feedback");
-  const body = encodeURIComponent(`Hi MEET & GREET team,\n\n(Write your feedback here)\n\n—\nApp version: ${APP_VERSION}\nAccount: ${currentProfile?.full_name || ""}`);
+  const subject = encodeURIComponent("VORTEXIA Feedback");
+  const body = encodeURIComponent(`Hi VORTEXIA team,\n\n(Write your feedback here)\n\n—\nApp version: ${APP_VERSION}\nAccount: ${currentProfile?.full_name || ""}`);
   window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
 });
 
 // --- Clear cache ---
 $("btnClearCache").addEventListener("click", () => {
-  if (!confirm("This clears locally cached app data on this device and reloads MEET & GREET. Your account and data on the server are not affected. Continue?")) return;
+  if (!confirm("This clears locally cached app data on this device and reloads VORTEXIA. Your account and data on the server are not affected. Continue?")) return;
   try {
     const keepSupabaseAuth = Object.keys(localStorage).filter(k => k.startsWith("sb-"));
     const keep = {};
@@ -667,7 +672,7 @@ $("btnClearCache").addEventListener("click", () => {
 $("btnAppSupport").addEventListener("click", () => {
   openModal(`
     <div class="modalTitle">App support</div>
-    <div class="itemMeta" style="margin-bottom:10px">Need help with MEET & GREET? Reach us here:</div>
+    <div class="itemMeta" style="margin-bottom:10px">Need help with VORTEXIA? Reach us here:</div>
     <div class="listItem"><div class="itemTitle" style="font-size:13px">Email</div><a class="btn btnGhost btnSm" href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></div>
     <div class="listItem"><div class="itemTitle" style="font-size:13px">Website</div><span class="itemMeta">Coming soon — a support page will be linked here once our own domain is live.</span></div>
     <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn btnGhost" id="modalCancel">Close</button></div>
@@ -682,7 +687,7 @@ $("btnPrivacyPolicy").addEventListener("click", () => {
     <div class="itemMeta" style="max-height:50vh;overflow-y:auto;line-height:1.5;text-align:left">
       <p><strong>Last updated:</strong> ${APP_BUILD_DATE}</p>
       <p><strong>What we collect:</strong> your name, email, and any bio/avatar you add to your profile; meetings and chat messages you create or take part in; whiteboard content you draw; basic call metadata (who, when, how long) for calls you make in the app.</p>
-      <p><strong>How it's used:</strong> solely to run MEET & GREET's features for you — scheduling meetings, chat, voice calls, and optional email reminders. We don't sell your data or show ads.</p>
+      <p><strong>How it's used:</strong> solely to run VORTEXIA's features for you — scheduling meetings, chat, voice calls, and optional email reminders. We don't sell your data or show ads.</p>
       <p><strong>Where it's stored:</strong> Supabase (a hosted Postgres database), with access rules that only let you and people you're meeting/chatting with see the relevant data.</p>
       <p><strong>Third parties:</strong> Jitsi Meet provides the underlying video/voice connection for calls; Resend delivers email reminders. Neither is given more than what's needed to provide those features.</p>
       <p><strong>Your controls:</strong> you can edit or delete your profile, block other users from contacting you, and permanently delete your account (Profile → Danger zone) at any time.</p>
@@ -700,7 +705,7 @@ $("btnAboutDeveloper").addEventListener("click", () => {
     <div class="itemMeta" style="line-height:1.6">
       <p><strong>John Lloyd Salazar Biendima</strong></p>
       <p>Science City of Muñoz, 3119<br/>Nueva Ecija, Philippines</p>
-      <p style="margin-top:10px">Founder &amp; developer of MEET &amp; GREET.</p>
+      <p style="margin-top:10px">Founder &amp; developer of VORTEXIA.</p>
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn btnGhost" id="modalCancel">Close</button></div>
   `);
@@ -917,7 +922,7 @@ async function generateAiSummary() {
       body: {
         prompt,
         meta: {
-          appName: "MEET & GREET",
+          appName: "VORTEXIA",
           platform: "web",
           preferredLanguage: currentProfile.language || "en",
         },
@@ -1384,16 +1389,16 @@ function renderNotifications() {
     return;
   }
   el.innerHTML = list.map(n => `
-    <div class="listItem" data-notif="${n.id}" style="${n.is_read ? "opacity:.65" : ""};cursor:pointer">
-      <div style="display:flex;gap:10px;align-items:flex-start">
-        <span style="font-size:18px">${notifIcon(n.type)}</span>
+    <div class="listItem notifItem ${n.is_read ? "" : "notifUnread"}" data-notif="${n.id}">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <span class="notifAvatar">${notifIcon(n.type)}</span>
         <div>
           <div class="itemTitle">${escapeHtml(n.title)}</div>
           ${n.body ? `<div class="itemMeta">${escapeHtml(n.body)}</div>` : ""}
-          <div class="itemMeta">${fmtDate(n.created_at)}</div>
+          <div class="itemMeta" style="color:var(--faint)">${fmtDate(n.created_at)}</div>
         </div>
       </div>
-      ${!n.is_read ? `<span class="badge" style="background:var(--greenSoft);color:var(--greenDeep)">New</span>` : ""}
+      ${!n.is_read ? `<span class="notifDot"></span>` : ""}
     </div>`).join("");
   el.querySelectorAll("[data-notif]").forEach(item => {
     item.addEventListener("click", async () => {
@@ -3339,17 +3344,32 @@ document.getElementById("moreSubTabs").addEventListener("click", (e) => {
 
 /* ---------- FEED (read-only announcements) ---------- */
 async function loadFeed() {
-  const list = $("feedList");
   const { data, error } = await supabaseClient.from("feed_posts").select("*").order("created_at", { ascending: false }).limit(30);
-  if (error) { console.error("loadFeed:", error); list.innerHTML = `<div class="emptyState">Could not load feed.</div>`; return; }
-  if (!data || !data.length) { list.innerHTML = `<div class="emptyState">No announcements yet — check back soon.</div>`; return; }
-  list.innerHTML = data.map(p => `
+  const targets = [$("feedList"), $("dashFeedList")].filter(Boolean);
+  if (error) {
+    console.error("loadFeed:", error);
+    targets.forEach(list => list.innerHTML = `<div class="emptyState">Could not load feed.</div>`);
+    return;
+  }
+  if (!data || !data.length) {
+    targets.forEach(list => list.innerHTML = `<div class="emptyState">No announcements yet — check back soon.</div>`);
+    return;
+  }
+  const html = data.map(p => `
     <div class="feedCard">
       <div class="feedMeta">${fmtDate(p.created_at)}${p.author_name ? " • " + escapeHtml(p.author_name) : ""}</div>
       <div class="feedTitle">${escapeHtml(p.title || "")}</div>
       <div class="feedBody">${escapeHtml(p.body || "")}</div>
     </div>
   `).join("");
+  // Dashboard shows a shorter preview (first 5); Community shows the full feed.
+  targets.forEach(list => { list.innerHTML = list.id === "dashFeedList" ? data.slice(0, 5).map(p => `
+    <div class="feedCard">
+      <div class="feedMeta">${fmtDate(p.created_at)}${p.author_name ? " • " + escapeHtml(p.author_name) : ""}</div>
+      <div class="feedTitle">${escapeHtml(p.title || "")}</div>
+      <div class="feedBody">${escapeHtml(p.body || "")}</div>
+    </div>
+  `).join("") : html; });
 }
 
 /* ---------- MARKETPLACE (job listings) ---------- */
@@ -3538,3 +3558,94 @@ $("btnTwoFactor").addEventListener("click", async () => {
     showToast("Two-factor authentication enabled!");
   });
 });
+
+/* ============================================================
+   COMMUNITY STATS (members, posts, online now, newest members)
+   Requires: profiles.last_seen_at column (see supabase_more_tables.sql)
+   "Online now" = profile updated its heartbeat in the last 5 minutes —
+   an honest approximation, not full real-time presence tracking.
+   ============================================================ */
+async function loadCommunityStats() {
+  const [{ count: memberCount }, { count: forumCount }, { count: jobCount }, { count: onlineCount }, { data: newest }] = await Promise.all([
+    supabaseClient.from("profiles").select("*", { count: "exact", head: true }),
+    supabaseClient.from("forum_posts").select("*", { count: "exact", head: true }),
+    supabaseClient.from("job_listings").select("*", { count: "exact", head: true }),
+    supabaseClient.from("profiles").select("*", { count: "exact", head: true }).gte("last_seen_at", new Date(Date.now() - 5 * 60 * 1000).toISOString()),
+    supabaseClient.from("profiles").select("id, full_name, created_at").order("created_at", { ascending: false }).limit(5),
+  ]);
+
+  $("statMembers").textContent = memberCount ?? "–";
+  $("statPosts").textContent = ((forumCount || 0) + (jobCount || 0)) || "–";
+  $("statOnline").textContent = onlineCount ?? "–";
+
+  const list = $("newestMembersList");
+  if (!newest || !newest.length) { list.innerHTML = `<div class="emptyState">No members yet.</div>`; return; }
+  list.innerHTML = newest.map(m => `
+    <div class="listItem">
+      <div class="itemMeta">${escapeHtml(m.full_name || "New member")} — joined ${fmtDate(m.created_at)}</div>
+    </div>
+  `).join("");
+}
+
+/* Heartbeat: update our own last_seen_at every 60s while the app is open,
+   so "Online now" reflects reality rather than being hardcoded. */
+let heartbeatInterval = null;
+function startPresenceHeartbeat() {
+  if (heartbeatInterval || !currentUser) return;
+  const beat = () => supabaseClient.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", currentUser.id);
+  beat();
+  heartbeatInterval = setInterval(beat, 60000);
+}
+
+/* ---------- Active Status Bar: online friends (real presence via last_seen_at) ---------- */
+async function renderActiveStatusBar() {
+  const el = $("activeStatusBar");
+  if (!el || !currentUser) return;
+  const { data: follows } = await supabaseClient.from("follows").select("followee_id").eq("follower_id", currentUser.id);
+  const followingIds = (follows || []).map(f => f.followee_id);
+  if (!followingIds.length) { el.innerHTML = ""; return; }
+
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const { data: online } = await supabaseClient.from("profiles").select("id, full_name, last_seen_at").in("id", followingIds).gte("last_seen_at", fiveMinAgo);
+  if (!online || !online.length) { el.innerHTML = ""; return; }
+
+  el.innerHTML = online.map(p => {
+    const initial = (p.full_name || "?").trim().charAt(0).toUpperCase();
+    return `
+      <div class="activeStatusItem" data-user="${p.id}">
+        <div class="activeStatusAvatar">${escapeHtml(initial)}<span class="activeStatusDot"></span></div>
+        <div class="activeStatusName">${escapeHtml((p.full_name || "").split(" ")[0] || "Friend")}</div>
+      </div>`;
+  }).join("");
+}
+
+/* ---------- Global search (top bar 🔎) ---------- */
+$("btnGlobalSearch").addEventListener("click", () => {
+  openModal(`
+    <div class="modalTitle">Search</div>
+    <div class="field"><input type="text" id="globalSearchInput" placeholder="Search people, forum posts, jobs…" /></div>
+    <div class="list" id="globalSearchResults" style="margin-top:10px"><div class="emptyState">Type to search.</div></div>
+  `);
+  const input = $("globalSearchInput");
+  input.focus();
+  input.addEventListener("input", debounce(async () => {
+    const q = input.value.trim();
+    const results = $("globalSearchResults");
+    if (q.length < 2) { results.innerHTML = `<div class="emptyState">Type at least 2 characters.</div>`; return; }
+    const [{ data: people }, { data: forum }, { data: jobs }] = await Promise.all([
+      supabaseClient.from("profiles").select("id, full_name").ilike("full_name", `%${q}%`).limit(5),
+      supabaseClient.from("forum_posts").select("id, title").ilike("title", `%${q}%`).limit(5),
+      supabaseClient.from("job_listings").select("id, title").ilike("title", `%${q}%`).limit(5),
+    ]);
+    const sections = [];
+    if (people?.length) sections.push(`<div class="itemMeta" style="margin:8px 0 4px">People</div>` + people.map(p => `<div class="listItem">${escapeHtml(p.full_name || "—")}</div>`).join(""));
+    if (forum?.length) sections.push(`<div class="itemMeta" style="margin:8px 0 4px">Forum</div>` + forum.map(f => `<div class="listItem">${escapeHtml(f.title)}</div>`).join(""));
+    if (jobs?.length) sections.push(`<div class="itemMeta" style="margin:8px 0 4px">Marketplace</div>` + jobs.map(j => `<div class="listItem">${escapeHtml(j.title)}</div>`).join(""));
+    results.innerHTML = sections.length ? sections.join("") : `<div class="emptyState">No results for "${escapeHtml(q)}".</div>`;
+  }, 350));
+});
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}

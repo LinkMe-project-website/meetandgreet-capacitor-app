@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#107C41" />
-  <title>MEET & GREET</title>
+  <meta name="theme-color" content="#0A2463" />
+  <title>VORTEXIA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
@@ -18,8 +18,8 @@
   <div class="splashWrap" id="splashWrap">
     <div class="splashLogoRow">
       <div class="brandMark brandMark--lg" style="border-radius:26px"></div>
-      <div class="splashTitle">MEET &amp; GREET</div>
-      <div class="splashTagline">Meet, Chat, Create — Safe &amp; Simple</div>
+      <div class="splashTitle">VORTEXIA</div>
+      <div class="splashTagline">Where Every Opportunity Meets You</div>
       <div class="splashSecureRow">Secure • No Social Links • One-Time Login</div>
     </div>
     <div class="splashLoaderOuter"><div class="splashLoaderInner"></div></div>
@@ -86,8 +86,8 @@
     <div class="authCard">
       <div class="authLogo">
         <div class="brandMark" style="width:52px;height:52px;border-radius:16px"></div>
-        <div class="brandTitle" style="font-size:22px">MEET &amp; GREET</div>
-        <div class="authTagline">Safe • Simple • All-in-one • Comfortable</div>
+        <div class="brandTitle" style="font-size:22px">VORTEXIA</div>
+        <div class="authTagline">Where Every Opportunity Meets You</div>
       </div>
 
       <div class="authTabs">
@@ -128,7 +128,7 @@
       </form>
 
       <div class="authNote">
-        MEET &amp; GREET uses email &amp; password only — no Google, Facebook, or social login.
+        VORTEXIA uses email &amp; password only — no Google, Facebook, or social login.
         Your data is encrypted and never sold or shared.
       </div>
     </div>
@@ -143,6 +143,7 @@
       </div>
       <div class="topActions">
         <span class="badge" id="planBadge">Free</span>
+        <button class="iconCircle" id="btnGlobalSearch" title="Search">🔎</button>
         <button class="iconCircle" id="btnProfileTop" title="Profile" data-view="dashboard">
           <span id="topAvatarInitial">👤</span>
         </button>
@@ -152,13 +153,10 @@
     </header>
 
     <nav class="bottomNav" id="navTabs">
-      <button class="navTab active" data-view="dashboard"><span class="navIco">🏠</span><span class="navLbl">Dashboard</span></button>
-      <button class="navTab" data-view="meetings"><span class="navIco">📅</span><span class="navLbl">Meetings</span></button>
-      <button class="navTab" data-view="chat"><span class="navIco">💬</span><span class="navLbl">Chat</span></button>
-      <button class="navTab" data-view="recordings"><span class="navIco">🎥</span><span class="navLbl">Recordings</span></button>
-      <button class="navTab" data-view="notifications"><span class="navIco navIcoWrap">🔔<span class="navBadge hidden" id="notifBadge">0</span></span><span class="navLbl">Alerts</span></button>
-      <button class="navTab" data-view="more"><span class="navIco">➕</span><span class="navLbl">More</span></button>
-      <button class="navTab" data-view="profile"><span class="navIco">👤</span><span class="navLbl">Profile</span></button>
+      <button class="navTab active" data-view="dashboard"><span class="navIco">🏠</span><span class="navLbl">Home</span></button>
+      <button class="navTab" data-view="more"><span class="navIco">🤝</span><span class="navLbl">Community</span></button>
+      <button class="navTab" data-view="chat"><span class="navIco">💬</span><span class="navLbl">Chats</span></button>
+      <button class="navTab" data-view="notifications"><span class="navIco navIcoWrap">🔔<span class="navBadge hidden" id="notifBadge">0</span></span><span class="navLbl">Notifications</span></button>
     </nav>
 
     <main class="main">
@@ -186,8 +184,8 @@
           <div class="cardTitle">Quick actions</div>
           <div style="display:flex;flex-direction:column;gap:10px">
             <button class="btn btnPrimary btnBlock" id="qaInstant">🎥 Start Instant Meeting</button>
-            <button class="btn btnGhost btnBlock" id="qaSchedule">📅 Schedule a Meeting</button>
-            <button class="btn btnGhost btnBlock" id="qaChat">💬 Open Chat</button>
+            <button class="btn btnGhost btnBlock" id="qaSchedule">📅 Schedule Meeting</button>
+            <button class="btn btnGhost btnBlock" id="qaRecordings">🎬 My Recordings</button>
           </div>
         </div>
 
@@ -202,10 +200,18 @@
           <div class="storageBarOuter"><div class="storageBarInner" id="storageBar" style="width:0%"></div></div>
           <div class="itemMeta" id="storageLabel" style="margin-top:4px"></div>
         </div>
+
+        <div class="card">
+          <div class="cardRow" style="margin-bottom:10px">
+            <div class="cardTitle" style="margin:0">📢 Latest updates</div>
+          </div>
+          <div class="list" id="dashFeedList"><div class="emptyState">Loading feed…</div></div>
+        </div>
       </section>
 
       <!-- ---------- MEETINGS ---------- -->
       <section class="view" id="viewMeetings">
+        <button class="btn btnGhost btnSm" id="backFromMeetings" style="margin-bottom:12px">← Back to Home</button>
         <div class="card">
           <div class="cardRow">
             <div class="cardTitle" style="margin:0">Schedule a meeting</div>
@@ -263,6 +269,7 @@
           <div class="chatLayout">
             <!-- CHATS tab -->
             <div class="chatThreadsContainer active" id="chatsContainer">
+              <div class="activeStatusBar" id="activeStatusBar"></div>
               <div class="chatThreads" id="chatThreads"><div class="emptyState">No conversations yet. Add friends or start a group chat to begin.</div></div>
             </div>
 
@@ -365,6 +372,7 @@
 
       <!-- ---------- RECORDINGS ---------- -->
       <section class="view" id="viewRecordings">
+        <button class="btn btnGhost btnSm" id="backFromRecordings" style="margin-bottom:12px">← Back to Home</button>
         <div class="card">
           <div class="cardRow">
             <div class="cardTitle" style="margin:0">Your recordings</div>
@@ -517,13 +525,33 @@
 
       <!-- ---------- MORE: Feed / Marketplace / Forum ---------- -->
       <section class="view" id="viewMore">
+        <div class="card" style="margin-bottom:14px">
+          <div class="itemMeta" style="line-height:1.5">
+            🛡️ <strong>Verified members only can post.</strong> Never send payment upfront, never share OTPs/passwords, and report suspicious posts. Flagged posts are hidden pending review.
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px">
+          <div class="cardRow" style="margin-bottom:10px"><div class="cardTitle" style="margin:0">📊 Community stats</div></div>
+          <div class="metricRow" id="communityStatsRow">
+            <div class="metric"><div class="metricNum" id="statMembers">–</div><div class="metricLbl">members</div></div>
+            <div class="metric"><div class="metricNum" id="statPosts">–</div><div class="metricLbl">posts</div></div>
+            <div class="metric"><div class="metricNum" id="statOnline">–</div><div class="metricLbl">online now</div></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px">
+          <div class="cardTitle" style="margin-bottom:10px">🆕 Newest members</div>
+          <div class="list" id="newestMembersList"><div class="emptyState">Loading…</div></div>
+        </div>
+
         <div class="subTabBar" id="moreSubTabs">
-          <button class="subTabBtn active" data-sub="feed">📢 Feed</button>
+          <button class="subTabBtn active" data-sub="feed">📢 Announcements</button>
           <button class="subTabBtn" data-sub="marketplace">🛍️ Marketplace</button>
           <button class="subTabBtn" data-sub="forum">💬 Forum</button>
         </div>
 
-        <!-- FEED -->
+        <!-- FEED / ANNOUNCEMENTS -->
         <div class="subView active" id="moreFeed">
           <div class="list" id="feedList"><div class="emptyState">Loading feed…</div></div>
         </div>
@@ -541,6 +569,7 @@
           <div class="sectionHead">
             <button class="btn btnPrimary btnSm" id="btnNewThread">+ Start a discussion</button>
           </div>
+          <div class="cardTitle" style="margin:14px 0 8px;font-size:14px">📌 Latest threads</div>
           <div class="list" id="forumList"><div class="emptyState">Loading discussions…</div></div>
         </div>
       </section>
