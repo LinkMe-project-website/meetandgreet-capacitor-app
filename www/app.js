@@ -164,7 +164,7 @@ $("formLogin").addEventListener("submit", async (e) => {
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   $("btnDoLogin").disabled = false;
   if (error) { authMsg(error.message, "err"); return; }
-  await onLoggedIn(data.user);
+  await requireMfaIfNeeded(data.user);
 });
 
 $("formSignup").addEventListener("submit", async (e) => {
@@ -199,6 +199,43 @@ $("btnLogout").addEventListener("click", async () => {
   $("app").classList.add("hidden");
   $("authWrap").classList.remove("hidden");
 });
+
+/* ---------- 2FA login gate: prompt for TOTP code if account requires it ---------- */
+async function requireMfaIfNeeded(user) {
+  const { data: aal, error: aalErr } = await supabaseClient.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aalErr) { console.error("MFA check failed:", aalErr); await onLoggedIn(user); return; }
+
+  if (aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+    const { data: factorsData } = await supabaseClient.auth.mfa.listFactors();
+    const factor = (factorsData?.totp || []).find(f => f.status === "verified");
+    if (!factor) { await onLoggedIn(user); return; }
+
+    openModal(`
+      <div class="modalTitle">Enter your 2FA code</div>
+      <div class="itemMeta" style="margin-bottom:14px">Open your authenticator app and enter the 6-digit code to finish signing in.</div>
+      <div class="field"><input type="text" id="loginTwofaCode" maxlength="6" placeholder="123456" /></div>
+      <div id="loginTwofaErr" class="itemMeta" style="color:var(--danger);min-height:16px;margin-top:6px"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:14px">
+        <button class="btn btnPrimary" id="loginTwofaSubmit">Verify</button>
+      </div>
+    `);
+    return new Promise((resolve) => {
+      $("loginTwofaSubmit").addEventListener("click", async () => {
+        const code = $("loginTwofaCode").value.trim();
+        if (!/^\d{6}$/.test(code)) { $("loginTwofaErr").textContent = "Enter the 6-digit code."; return; }
+        const { data: challengeData, error: challengeErr } = await supabaseClient.auth.mfa.challenge({ factorId: factor.id });
+        if (challengeErr) { $("loginTwofaErr").textContent = challengeErr.message; return; }
+        const { error: verifyErr } = await supabaseClient.auth.mfa.verify({ factorId: factor.id, challengeId: challengeData.id, code });
+        if (verifyErr) { $("loginTwofaErr").textContent = "Incorrect code, try again."; return; }
+        closeModal();
+        await onLoggedIn(user);
+        resolve();
+      });
+    });
+  }
+
+  await onLoggedIn(user);
+}
 
 async function onLoggedIn(user) {
   currentUser = user;
@@ -247,7 +284,7 @@ async function bootstrapSession() {
   hideAllFirstRunScreens();
 
   if (data.session && data.session.user) {
-    await onLoggedIn(data.session.user);
+    await requireMfaIfNeeded(data.session.user);
     return;
   }
 
@@ -3320,11 +3357,12 @@ async function loadJobs() {
   const list = $("jobList");
   const { data, error } = await supabaseClient.from("job_listings").select("*").order("created_at", { ascending: false }).limit(50);
   if (error) { console.error("loadJobs:", error); list.innerHTML = `<div class="emptyState">Could not load listings.</div>`; return; }
-  if (!data || !data.length) { list.innerHTML = `<div class="emptyState">No job listings yet — be the first to post one.</div>`; return; }
-  list.innerHTML = data.map(j => `
+  const visible = (data || []).filter(j => !j.flagged || j.poster_id === currentUser?.id);
+  if (!visible.length) { list.innerHTML = `<div class="emptyState">No job listings yet — be the first to post one.</div>`; return; }
+  list.innerHTML = visible.map(j => `
     <div class="jobCard">
       <div class="jobTop">
-        <div class="jobTitle">${escapeHtml(j.title || "")}</div>
+        <div class="jobTitle">${escapeHtml(j.title || "")}${j.flagged ? ` <span class="badge badgeFree" style="color:var(--danger)">Under review</span>` : ""}</div>
         ${j.budget ? `<div class="jobBudget">${escapeHtml(j.budget)}</div>` : ""}
       </div>
       <div class="jobDesc">${escapeHtml(j.description || "")}</div>
@@ -3365,26 +3403,46 @@ $("btnPostJob").addEventListener("click", () => {
     const budget = $("jobBudgetInput").value.trim();
     const description = $("jobDescInput").value.trim();
     if (!title || !description) { showToast("Please fill in title and description."); return; }
+    const mod = moderateText(title + " " + description);
     const { error } = await supabaseClient.from("job_listings").insert({
       title, budget: budget || null, description,
       poster_id: currentUser?.id || null, poster_name: currentProfile?.full_name || "Guest",
+      flagged: mod.flagged, flag_reason: mod.reason,
     });
     if (error) { showToast("Could not post job: " + error.message); return; }
     closeModal();
-    showToast("Job posted!");
+    showToast(mod.flagged ? "Posted — pending review (contains restricted content)." : "Job posted!");
     loadJobs();
   });
 });
 
 /* ---------- FORUM (discussions) ---------- */
+/* ---------- Auto-moderation (scam / spam detection) ---------- */
+const MODERATION_BLOCKLIST = [
+  // scam / financial-fraud patterns
+  "send money first", "gcash mo muna", "advance payment bago", "investment guaranteed",
+  "double your money", "sigurado kikita", "click this link to claim", "claim your prize",
+  "free load promo", "verify your account here", "bit.ly", "tinyurl.com",
+  // contact-info harvesting / off-platform redirect (common scam funnel)
+  "add me sa telegram", "message me sa whatsapp", "text lang sa number",
+];
+
+function moderateText(text) {
+  const lower = (text || "").toLowerCase();
+  const hit = MODERATION_BLOCKLIST.find(k => lower.includes(k));
+  return { flagged: !!hit, reason: hit || null };
+}
+
 async function loadForum() {
   const list = $("forumList");
   const { data, error } = await supabaseClient.from("forum_posts").select("*").order("created_at", { ascending: false }).limit(50);
   if (error) { console.error("loadForum:", error); list.innerHTML = `<div class="emptyState">Could not load discussions.</div>`; return; }
   if (!data || !data.length) { list.innerHTML = `<div class="emptyState">No discussions yet — start one.</div>`; return; }
-  list.innerHTML = data.map(f => `
+  const visible = data.filter(f => !f.flagged || f.author_id === currentUser?.id);
+  if (!visible.length) { list.innerHTML = `<div class="emptyState">No discussions yet — start one.</div>`; return; }
+  list.innerHTML = visible.map(f => `
     <div class="forumCard" data-thread="${f.id}">
-      <div class="forumTitle">${escapeHtml(f.title || "")}</div>
+      <div class="forumTitle">${escapeHtml(f.title || "")}${f.flagged ? ` <span class="badge badgeFree" style="color:var(--danger)">Under review</span>` : ""}</div>
       <div class="forumMeta"><span>${escapeHtml(f.author_name || "Guest")}</span><span>${fmtDate(f.created_at)}</span><span>${f.reply_count || 0} replies</span></div>
     </div>
   `).join("");
@@ -3408,12 +3466,75 @@ $("btnNewThread").addEventListener("click", () => {
     const title = $("threadTitleInput").value.trim();
     const body = $("threadBodyInput").value.trim();
     if (!title) { showToast("Please add a title."); return; }
+    const mod = moderateText(title + " " + body);
     const { error } = await supabaseClient.from("forum_posts").insert({
-      title, body, author_id: currentUser?.id || null, author_name: currentProfile?.full_name || "Guest", reply_count: 0,
+      title, body, author_id: currentUser?.id || null, author_name: currentProfile?.full_name || "Guest",
+      reply_count: 0, flagged: mod.flagged, flag_reason: mod.reason,
     });
     if (error) { showToast("Could not post: " + error.message); return; }
     closeModal();
-    showToast("Discussion posted!");
+    showToast(mod.flagged ? "Posted — pending review (contains restricted content)." : "Discussion posted!");
     loadForum();
+  });
+});
+
+/* ============================================================
+   TWO-FACTOR AUTHENTICATION (TOTP via Supabase Auth MFA)
+   ============================================================ */
+$("btnTwoFactor").addEventListener("click", async () => {
+  const { data: factorsData, error: factorsErr } = await supabaseClient.auth.mfa.listFactors();
+  if (factorsErr) { showToast("Could not check 2FA status: " + factorsErr.message); return; }
+  const verified = (factorsData?.totp || []).find(f => f.status === "verified");
+
+  if (verified) {
+    openModal(`
+      <div class="modalTitle">Two-factor authentication</div>
+      <div class="itemMeta" style="margin-bottom:14px">Two-factor authentication is <strong style="color:var(--greenDeep)">enabled</strong> on your account using an authenticator app.</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btnGhost" id="twofaClose">Close</button>
+        <button class="btn btnDanger" id="twofaDisable">Turn off 2FA</button>
+      </div>
+    `);
+    $("twofaClose").addEventListener("click", closeModal);
+    $("twofaDisable").addEventListener("click", async () => {
+      const { error } = await supabaseClient.auth.mfa.unenroll({ factorId: verified.id });
+      if (error) { showToast("Could not disable 2FA: " + error.message); return; }
+      closeModal();
+      showToast("Two-factor authentication turned off.");
+    });
+    return;
+  }
+
+  // Not enrolled yet — start enrollment
+  const { data: enrollData, error: enrollErr } = await supabaseClient.auth.mfa.enroll({ factorType: "totp" });
+  if (enrollErr) { showToast("Could not start 2FA setup: " + enrollErr.message); return; }
+  const factorId = enrollData.id;
+  const qrSvg = enrollData.totp.qr_code;
+  const secret = enrollData.totp.secret;
+
+  openModal(`
+    <div class="modalTitle">Set up two-factor authentication</div>
+    <div class="itemMeta" style="margin-bottom:10px">Scan this QR code with an authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code it shows.</div>
+    <div style="display:flex;justify-content:center;margin-bottom:10px">${qrSvg}</div>
+    <div class="itemMeta" style="margin-bottom:14px;text-align:center">Or enter manually: <code>${escapeHtml(secret)}</code></div>
+    <div class="field"><label>6-digit code</label><input type="text" id="twofaCodeInput" maxlength="6" placeholder="123456" /></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+      <button class="btn btnGhost" id="twofaCancel">Cancel</button>
+      <button class="btn btnPrimary" id="twofaVerify">Verify & enable</button>
+    </div>
+  `);
+  $("twofaCancel").addEventListener("click", async () => {
+    await supabaseClient.auth.mfa.unenroll({ factorId });
+    closeModal();
+  });
+  $("twofaVerify").addEventListener("click", async () => {
+    const code = $("twofaCodeInput").value.trim();
+    if (!/^\d{6}$/.test(code)) { showToast("Enter the 6-digit code from your app."); return; }
+    const { data: challengeData, error: challengeErr } = await supabaseClient.auth.mfa.challenge({ factorId });
+    if (challengeErr) { showToast("Error: " + challengeErr.message); return; }
+    const { error: verifyErr } = await supabaseClient.auth.mfa.verify({ factorId, challengeId: challengeData.id, code });
+    if (verifyErr) { showToast("Incorrect code, try again."); return; }
+    closeModal();
+    showToast("Two-factor authentication enabled!");
   });
 });
