@@ -1,10 +1,673 @@
 <!doctype html>
-<html>
-<head><meta charset="utf-8"><title>Meet & Greet</title></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#107C41" />
+  <title>MEET & GREET</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://8x8.vc/external_api.js"></script>
+</head>
 <body>
-  <!-- Placeholder only — Capacitor overrides this with server.url in capacitor.config.json,
-       which points to your live GitHub Pages site. This file is required to exist locally
-       but is never actually shown to users. -->
-  <p>Loading Meet & Greet…</p>
+
+  <!-- ===================== SPLASH SCREEN ===================== -->
+  <div class="splashWrap" id="splashWrap">
+    <div class="splashLogoRow">
+      <div class="brandMark brandMark--lg" style="border-radius:26px"></div>
+      <div class="splashTitle">MEET &amp; GREET</div>
+      <div class="splashTagline">Meet, Chat, Create — Safe &amp; Simple</div>
+      <div class="splashSecureRow">Secure • No Social Links • One-Time Login</div>
+    </div>
+    <div class="splashLoaderOuter"><div class="splashLoaderInner"></div></div>
+  </div>
+
+  <!-- ===================== ONBOARDING TUTORIAL ===================== -->
+  <div class="onboardWrap hidden" id="onboardWrap">
+    <div class="onboardTopBar">
+      <button class="btn btnGhost btnSm" id="btnOnboardSkip">Skip</button>
+    </div>
+    <div class="onboardTrack" id="onboardTrack">
+      <div class="onboardSlide">
+        <div class="onboardIcon">🎥</div>
+        <div class="onboardHeadline">Meet Instantly</div>
+        <div class="onboardBody">Start or join a video meeting in a single tap — no waiting rooms, no setup hassle.</div>
+      </div>
+      <div class="onboardSlide">
+        <div class="onboardIcon">💬</div>
+        <div class="onboardHeadline">Chat Freely</div>
+        <div class="onboardBody">Messenger-style chats, group conversations, and voice calls — all in one place.</div>
+      </div>
+      <div class="onboardSlide">
+        <div class="onboardIcon">🔒</div>
+        <div class="onboardHeadline">Stay Safe</div>
+        <div class="onboardBody">No social accounts linked, ever. Your account stays private, secure, and fully yours.</div>
+      </div>
+    </div>
+    <div class="onboardBottom">
+      <div class="onboardDots" id="onboardDots">
+        <span class="onboardDot active"></span>
+        <span class="onboardDot"></span>
+        <span class="onboardDot"></span>
+      </div>
+      <button class="btn btnPrimary btnBlock" id="btnOnboardNext">Next</button>
+    </div>
+  </div>
+
+  <!-- ===================== GENDER SELECT SCREEN ===================== -->
+  <div class="genderWrap hidden" id="genderWrap">
+    <div>
+      <div class="genderTitle">Tell us a little about yourself</div>
+      <div class="genderNote" style="margin-top:8px">Optional — you can skip and change this later</div>
+    </div>
+    <div class="genderCards">
+      <button class="genderCard" id="genderCardMale" data-gender="male">
+        <span class="genderCheck">✓</span>
+        <span class="genderCardIcon">🧑🏽</span>
+        <span class="genderCardLabel">Male</span>
+      </button>
+      <button class="genderCard" id="genderCardFemale" data-gender="female">
+        <span class="genderCheck">✓</span>
+        <span class="genderCardIcon">👩🏽</span>
+        <span class="genderCardLabel">Female</span>
+      </button>
+    </div>
+    <div class="genderActions">
+      <button class="btn btnPrimary btnBlock" id="btnGenderContinue">Continue</button>
+      <button class="btn btnGhost btnBlock" id="btnGenderSkip">Skip for now</button>
+    </div>
+  </div>
+
+  <!-- ===================== AUTH SCREEN ===================== -->
+  <div class="authWrap hidden" id="authWrap">
+    <div class="authCard">
+      <div class="authLogo">
+        <div class="brandMark" style="width:52px;height:52px;border-radius:16px"></div>
+        <div class="brandTitle" style="font-size:22px">MEET &amp; GREET</div>
+        <div class="authTagline">Safe • Simple • All-in-one • Comfortable</div>
+      </div>
+
+      <div class="authTabs">
+        <div class="authTab active" id="tabLogin">Log In</div>
+        <div class="authTab" id="tabSignup">Sign Up</div>
+      </div>
+
+      <div id="authMsg"></div>
+
+      <!-- LOGIN FORM -->
+      <form id="formLogin">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="loginEmail" required placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button class="btn btnPrimary btnBlock" type="submit" id="btnDoLogin">Log In</button>
+      </form>
+
+      <!-- SIGNUP FORM -->
+      <form id="formSignup" class="hidden">
+        <div class="field">
+          <label>Full name</label>
+          <input type="text" id="signupName" required placeholder="Juan Dela Cruz" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="signupEmail" required placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="signupPassword" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password" />
+        </div>
+        <button class="btn btnPrimary btnBlock" type="submit" id="btnDoSignup">Create Account</button>
+      </form>
+
+      <div class="authNote">
+        MEET &amp; GREET uses email &amp; password only — no Google, Facebook, or social login.
+        Your data is encrypted and never sold or shared.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MAIN APP ===================== -->
+  <div class="app hidden" id="app">
+    <header class="topbar">
+      <div class="topTitleWrap">
+        <div class="pageTitle" id="pageTitle">Dashboard</div>
+        <div class="pageSubtitle" id="pageSubtitle"></div>
+      </div>
+      <div class="topActions">
+        <span class="badge" id="planBadge">Free</span>
+        <button class="iconCircle" id="btnProfileTop" title="Profile" data-view="dashboard">
+          <span id="topAvatarInitial">👤</span>
+        </button>
+        <button class="iconCircle" id="btnSettingsTop" title="Settings">⚙️</button>
+        <button class="btn btnGhost btnSm hidden" id="btnLogout">Log out</button>
+      </div>
+    </header>
+
+    <nav class="bottomNav" id="navTabs">
+      <button class="navTab active" data-view="dashboard"><span class="navIco">🏠</span><span class="navLbl">Dashboard</span></button>
+      <button class="navTab" data-view="meetings"><span class="navIco">📅</span><span class="navLbl">Meetings</span></button>
+      <button class="navTab" data-view="chat"><span class="navIco">💬</span><span class="navLbl">Chat</span></button>
+      <button class="navTab" data-view="recordings"><span class="navIco">🎥</span><span class="navLbl">Recordings</span></button>
+      <button class="navTab" data-view="notifications"><span class="navIco navIcoWrap">🔔<span class="navBadge hidden" id="notifBadge">0</span></span><span class="navLbl">Alerts</span></button>
+      <button class="navTab" data-view="more"><span class="navIco">➕</span><span class="navLbl">More</span></button>
+      <button class="navTab" data-view="profile"><span class="navIco">👤</span><span class="navLbl">Profile</span></button>
+    </nav>
+
+    <main class="main">
+
+      <!-- ---------- DASHBOARD ---------- -->
+      <section class="view active" id="viewDashboard">
+        <div class="card welcomeCard">
+          <div class="welcomeTop">
+            <div class="welcomeAvatar" id="dashAvatarInitial">🙂</div>
+            <div class="welcomeInfo">
+              <div class="itemMeta" id="dashGreeting"></div>
+              <div id="dashName" class="welcomeName"></div>
+              <div class="itemMeta" id="dashEmail"></div>
+            </div>
+            <span class="badge" id="dashPlanBadge">Free</span>
+          </div>
+          <div class="metricRow">
+            <div class="metric"><div class="metricNum" id="mUpcoming">0</div><div class="metricLbl">upcoming meetings</div></div>
+            <div class="metric"><div class="metricNum" id="mHistory">0</div><div class="metricLbl">past meetings</div></div>
+          </div>
+          <div class="itemMeta" id="lastMeetingLabel" style="margin-top:10px"></div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">Quick actions</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn btnPrimary btnBlock" id="qaInstant">🎥 Start Instant Meeting</button>
+            <button class="btn btnGhost btnBlock" id="qaSchedule">📅 Schedule a Meeting</button>
+            <button class="btn btnGhost btnBlock" id="qaChat">💬 Open Chat</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">Upcoming meetings</div>
+          <div class="list" id="dashUpcomingList"><div class="emptyState">No upcoming meetings yet.</div></div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">Storage</div>
+          <div class="itemMeta">Storage used</div>
+          <div class="storageBarOuter"><div class="storageBarInner" id="storageBar" style="width:0%"></div></div>
+          <div class="itemMeta" id="storageLabel" style="margin-top:4px"></div>
+        </div>
+      </section>
+
+      <!-- ---------- MEETINGS ---------- -->
+      <section class="view" id="viewMeetings">
+        <div class="card">
+          <div class="cardRow">
+            <div class="cardTitle" style="margin:0">Schedule a meeting</div>
+          </div>
+          <form id="formSchedule">
+            <div class="field"><label>Title</label><input type="text" id="mTitle" required placeholder="Weekly team sync" /></div>
+            <div class="fieldRow">
+              <div class="field"><label>Date</label><input type="date" id="mDate" required /></div>
+              <div class="field"><label>Time</label><input type="time" id="mTime" required /></div>
+            </div>
+            <div class="fieldRow">
+              <div class="field"><label>Duration (minutes)</label><input type="number" id="mDuration" value="40" min="5" max="600" required /></div>
+              <div class="field"><label>Time zone</label>
+                <select id="mTimezone"></select>
+              </div>
+            </div>
+            <div class="field"><label>Invite participants (emails, comma separated)</label><input type="text" id="mInvites" placeholder="ana@company.com, ben@company.com" /></div>
+            <div class="field"><label>Passcode (optional)</label><input type="text" id="mPasscode" placeholder="Leave blank for none" /></div>
+            <button class="btn btnPrimary btnBlock" type="submit">Schedule Meeting</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">Your meetings</div>
+          <div class="list" id="meetingsList"><div class="emptyState">No meetings yet — schedule one above or start an instant meeting from the Dashboard.</div></div>
+        </div>
+      </section>
+
+  <!-- ---------- CHAT ---------- -->
+      <section class="view" id="viewChat">
+        <div class="card">
+          <div class="cardRow">
+            <div class="cardTitle" style="margin:0">Chat</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btnGhost btnSm" id="btnAddFriends">+ Add friends</button>
+              <button class="btn btnGhost btnSm" id="btnNewGroupChat">+ Group chat</button>
+            </div>
+          </div>
+
+          <!-- Search bar + filters -->
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <div class="field" style="flex:1;margin:0">
+              <input type="text" id="chatSearch" placeholder="Search chats, contacts, or messages..." />
+            </div>
+            <button class="btn btnGhost btnSm" id="btnChatFilter" title="Filter">🔽</button>
+          </div>
+
+          <!-- Chat tabs: Chats vs Groups vs Contacts -->
+          <div style="display:flex;gap:8px;margin-bottom:12px;border-bottom:1px solid var(--border)">
+            <button class="chatTab active" data-tab="chats">💬 All Chats</button>
+            <button class="chatTab" data-tab="groups">👥 Groups</button>
+            <button class="chatTab" data-tab="contacts">📇 Contacts</button>
+          </div>
+
+          <div class="chatLayout">
+            <!-- CHATS tab -->
+            <div class="chatThreadsContainer active" id="chatsContainer">
+              <div class="chatThreads" id="chatThreads"><div class="emptyState">No conversations yet. Add friends or start a group chat to begin.</div></div>
+            </div>
+
+            <!-- GROUPS tab -->
+            <div class="chatThreadsContainer" id="groupsContainer">
+              <div class="chatThreads" id="groupThreads"><div class="emptyState">No group chats yet. Use "+ Group chat" to start one.</div></div>
+            </div>
+
+            <!-- CONTACTS tab -->
+            <div class="chatThreadsContainer" id="contactsContainer">
+              <div class="list" id="contactsList"><div class="emptyState">You haven't followed anyone yet. Use Add friends to start.</div></div>
+            </div>
+
+            <!-- Main chat view -->
+            <div class="chatMain">
+              <div class="chatHeader hidden" id="chatHeaderBar">
+                <div style="flex:1;min-width:0">
+                  <span class="cardTitle" id="chatHeaderTitle" style="margin:0;font-size:15px;cursor:pointer;text-decoration:underline"></span>
+                  <span class="itemMeta" id="chatHeaderParticipants" style="margin:0;font-size:11px;display:block"></span>
+                  <span class="chatHeaderStatus" id="chatHeaderStatus"></span>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <button class="btn btnGhost btnSm" id="btnMuteChat" title="Mute notifications">🔕</button>
+                  <button class="btn btnGhost btnSm" id="btnPinList" title="View pinned messages">📌</button>
+                  <button class="btn btnPrimary btnSm" id="btnStartCall">📞</button>
+                </div>
+              </div>
+
+              <!-- Pinned messages panel -->
+              <div class="pinnedPanel hidden" id="pinnedPanel">
+                <div class="pinnedPanelHeader">
+                  <span>📌 Pinned Messages</span>
+                  <button class="btn btnGhost btnSm" id="btnClosePinPanel">✕</button>
+                </div>
+                <div id="pinnedList"></div>
+              </div>
+
+              <!-- Typing indicator -->
+              <div class="typingIndicator hidden" id="typingIndicator">
+                <span id="typingText"></span>
+                <div class="typingDots">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+
+              <!-- Pinned message display -->
+              <div class="pinnedMessage hidden" id="pinnedMessage">
+                <span>📌 Pinned: <strong id="pinnedText"></strong></span>
+                <button class="btn btnGhost btnSm" id="btnUnpin" style="padding:0;min-height:auto">×</button>
+              </div>
+
+              <!-- Messages with date separators -->
+              <div class="chatMessages" id="chatMessages"><div class="emptyState">Select a conversation to start chatting.</div></div>
+
+              <!-- Message search (shown when toggled) -->
+              <div class="messageSearch hidden" id="messageSearch">
+                <input type="text" id="messageSearchInput" placeholder="Search messages..." />
+                <div class="searchResults" id="searchResults"></div>
+              </div>
+
+              <!-- Emoji picker popover -->
+              <div class="emojiPickerPopover hidden" id="emojiPickerPopover">
+                <div class="emojiGrid" id="emojiGrid"></div>
+              </div>
+
+              <!-- File preview (before send) -->
+              <div class="filePreviewBar hidden" id="filePreviewBar">
+                <span id="filePreviewName"></span>
+                <button class="btn btnGhost btnSm" id="btnCancelFile" title="Remove file">✕</button>
+              </div>
+
+              <!-- Composer -->
+              <div class="chatComposer">
+                <button class="btn btnGhost btnSm composerBtn" id="btnAttach" title="Attach file" disabled>📎</button>
+                <input type="file" id="fileInput" style="display:none" accept="image/*,.pdf,.doc,.docx,.txt" />
+                <input type="text" id="chatInput" placeholder="Type a message…" disabled />
+                <button class="btn btnGhost btnSm composerBtn" id="btnEmojiPicker" title="Add emoji" disabled>😊</button>
+                <button class="btn btnGhost btnSm composerBtn" id="btnMsgSearch" title="Search messages" disabled>🔍</button>
+                <button class="btn btnPrimary" id="chatSend" disabled>Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- NOTIFICATIONS ---------- -->
+      <section class="view" id="viewNotifications">
+        <div class="card">
+          <div class="cardRow">
+            <div class="cardTitle" style="margin:0">Notifications</div>
+            <button class="btn btnGhost btnSm" id="btnMarkAllRead">Mark all as read</button>
+          </div>
+          <div style="display:flex;gap:8px;margin:12px 0;border-bottom:1px solid var(--border)">
+            <button class="chatTab active" data-notifTab="unread">✅ Unread</button>
+            <button class="chatTab" data-notifTab="all">📖 All</button>
+          </div>
+          <div class="list" id="notificationsList"><div class="emptyState">No notifications yet.</div></div>
+        </div>
+      </section>
+
+      <!-- ---------- RECORDINGS ---------- -->
+      <section class="view" id="viewRecordings">
+        <div class="card">
+          <div class="cardRow">
+            <div class="cardTitle" style="margin:0">Your recordings</div>
+            <button class="btn btnPrimary btnSm" id="btnUploadRecording">+ Upload recording</button>
+          </div>
+          <div class="itemMeta" style="margin-bottom:12px">Auto-recording isn't built in yet — record your screen with any recorder (OBS, phone screen recorder) during your meeting, then upload the video file here so everyone in that meeting can watch it back.</div>
+          <div class="list" id="recordingsList"><div class="emptyState">No recordings yet.</div></div>
+        </div>
+      </section>
+
+      <!-- ---------- WHITEBOARD ---------- -->
+      <section class="view" id="viewWhiteboard">
+        <div class="card" id="wbPickerCard">
+          <div class="cardTitle">Whiteboard</div>
+          <div class="itemMeta" style="margin-bottom:8px">Each meeting has its own shared whiteboard. Pick a meeting to open it.</div>
+          <div class="list" id="wbMeetingPickerList"><div class="emptyState">No meetings yet — schedule one first.</div></div>
+        </div>
+
+        <div class="card hidden" id="wbBoardCard">
+          <div class="cardRow">
+            <div class="cardTitle" style="margin:0" id="wbMeetingLabel">Whiteboard</div>
+            <button class="btn btnGhost btnSm" id="wbBack">&laquo; Back</button>
+          </div>
+          <div class="wbToolbar">
+            <button class="btn btnGhost btnSm wbColorBtn active" data-color="#0f2419">Black</button>
+            <button class="btn btnGhost btnSm wbColorBtn" data-color="#16a34a">Green</button>
+            <button class="btn btnGhost btnSm wbColorBtn" data-color="#e0483e">Red</button>
+            <button class="btn btnGhost btnSm wbColorBtn" data-color="#f59e0b">Amber</button>
+            <button class="btn btnGhost btnSm" id="wbAddSticky">+ Sticky note</button>
+            <button class="btn btnDanger btnSm" id="wbClear">Clear board</button>
+          </div>
+          <div class="wbCanvasWrap" id="wbCanvasWrap">
+            <canvas id="wbCanvas"></canvas>
+          </div>
+          <div class="lockNote">Synced in real time with everyone in this meeting.</div>
+        </div>
+      </section>
+      <!-- ---------- PROFILE ---------- -->
+      <section class="view" id="viewProfile">
+        <div class="grid2">
+          <div class="card">
+            <div class="cardTitle" style="display:flex;justify-content:space-between;align-items:center">
+              <span>Your profile</span>
+              <span class="badge" id="profilePlanBadge">Free</span>
+            </div>
+            <div class="field"><label>Full name</label><input type="text" id="pName" /></div>
+            <div class="field"><label>Bio</label><textarea id="pBio" rows="3" placeholder="A short bio…"></textarea></div>
+            <div class="field"><label>Avatar URL</label><input type="text" id="pAvatar" placeholder="https://…" /></div>
+            <div class="fieldRow">
+              <div class="field"><label>Time zone</label><select id="pTimezone"></select></div>
+              <div class="field"><label>Language</label>
+                <select id="pLanguage">
+                  <option value="en">English</option>
+                  <option value="fil">Filipino</option>
+                  <option value="es">Español</option>
+                  <option value="ja">日本語</option>
+                </select>
+              </div>
+            </div>
+            <div class="field"><label>Email (read-only)</label><input type="text" id="pEmail" disabled /></div>
+            <button class="btn btnPrimary btnBlock" id="btnSaveProfile">Save Profile</button>
+          </div>
+
+          <div class="card" id="membershipCard">
+            <div class="cardTitle">Membership</div>
+            <div class="cardRow" style="margin-bottom:6px">
+              <span>Current status</span>
+              <span class="badge" id="membershipStatusBadge">Free</span>
+            </div>
+            <div class="itemMeta" id="membershipStatusDetail" style="margin-bottom:16px"></div>
+
+            <div class="trialRedeemCard">
+              <div class="trialRedeemTitle">🎁 14 Days Full Access Free!</div>
+              <div class="trialRedeemSub">Add +7 Days with a redemption code</div>
+              <div class="redeemRow">
+                <input type="text" id="redeemCodeInput" placeholder="Enter code" maxlength="24" />
+                <button class="btn btnPrimary btnSm" id="btnRedeemCode">Redeem</button>
+              </div>
+            </div>
+
+            <div class="planGrid" id="planGrid"></div>
+
+            <div class="listItem" style="margin-top:14px;flex-direction:column;align-items:stretch;gap:6px">
+              <div class="itemTitle">Manual payment (GCash / Maya)</div>
+              <div class="itemMeta">
+                Send your payment to:<br/>
+                <strong>09454991538</strong> — John Lloyd Biendima (GCash / Maya)
+              </div>
+              <div class="itemMeta">After sending, message us your reference number so we can verify and activate your plan.</div>
+              <div class="itemMeta" style="opacity:.7">PayPal — coming soon</div>
+            </div>
+
+            <div class="vipFeatureList">
+              <div class="vipFeatureItem"><span class="vfIcon">✓</span> Unlimited cloud storage</div>
+              <div class="vipFeatureItem"><span class="vfIcon">✓</span> No time limit on meetings</div>
+              <div class="vipFeatureItem"><span class="vfIcon">✓</span> AI Companion — meeting notes &amp; recaps</div>
+              <div class="vipFeatureItem"><span class="vfIcon">✓</span> VIP Verified badge on your profile</div>
+              <div class="vipFeatureItem"><span class="vfIcon">✓</span> Priority support</div>
+            </div>
+
+            <div class="securityNote">
+              🔒 Payments are verified manually and never stored in the app. We never ask for your card number, OTP, or account password.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">AI Companion <span class="badge badgeVip">VIP</span></div>
+          <div class="comingSoon hidden" id="aiCompanionLocked">
+            Automatic meeting notes, summaries, and chat recaps are a VIP Verified feature. Upgrade to VIP to unlock this for all your meetings and chats.
+          </div>
+          <div class="hidden" id="aiCompanionUnlocked">
+            <div class="field">
+              <label>Choose a meeting or chat</label>
+              <select id="aiRoomSelect"></select>
+            </div>
+            <button class="btn btnPrimary btnBlock" id="btnAiGenerate">✨ Generate Summary</button>
+            <div class="aiOutputBox hidden" id="aiOutputBox"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">Phone / Voice calls</div>
+          <div class="itemMeta" style="margin-bottom:8px">In-app voice calls (app-to-app, WebRTC via Jitsi audio-only). Start one from the 📞 button in any Chat conversation. Calling a real phone number and voicemail aren't built yet — that needs a telephony provider like Twilio.</div>
+          <div class="list" id="callHistoryList"><div class="emptyState">No calls yet.</div></div>
+        </div>
+
+        <div class="card" id="settingsCard">
+          <div class="cardTitle">Settings</div>
+          <div class="settingsList">
+            <button class="settingsRow" id="btnAccount"><span>🆔 Account</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnPrivacyControl"><span>🛡️ Privacy control</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnNotifSettings"><span>🔔 Notifications</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnPrivacyBlocks"><span>🔒 Blocklist</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnTermsOfUse"><span>📃 Terms of use</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnFaq"><span>❓ FAQ</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnCommunityGuidelines"><span>📗 Community guidelines</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnSafetyAdvice"><span>🛟 Safety advice</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnFeedback"><span>💬 Send feedback</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnClearCache"><span>🧹 Clear cache</span><span class="chev">›</span></button>
+            <div class="settingsRow settingsRow--static"><span>📦 Version</span><span class="itemMeta" id="appVersionText">—</span></div>
+            <button class="settingsRow" id="btnAppSupport"><span>🧑‍💻 App support</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnPrivacyPolicy"><span>📄 Privacy policy</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnAboutDeveloper"><span>👤 About the developer</span><span class="chev">›</span></button>
+            <button class="settingsRow" id="btnSignOutSettings" style="color:var(--danger)"><span>🚪 Sign out</span><span class="chev">›</span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- MORE: Feed / Marketplace / Forum ---------- -->
+      <section class="view" id="viewMore">
+        <div class="subTabBar" id="moreSubTabs">
+          <button class="subTabBtn active" data-sub="feed">📢 Feed</button>
+          <button class="subTabBtn" data-sub="marketplace">🛍️ Marketplace</button>
+          <button class="subTabBtn" data-sub="forum">💬 Forum</button>
+        </div>
+
+        <!-- FEED -->
+        <div class="subView active" id="moreFeed">
+          <div class="list" id="feedList"><div class="emptyState">Loading feed…</div></div>
+        </div>
+
+        <!-- MARKETPLACE -->
+        <div class="subView" id="moreMarketplace">
+          <div class="sectionHead">
+            <button class="btn btnPrimary btnSm" id="btnPostJob">+ Post a job</button>
+          </div>
+          <div class="list" id="jobList"><div class="emptyState">Loading listings…</div></div>
+        </div>
+
+        <!-- FORUM -->
+        <div class="subView" id="moreForum">
+          <div class="sectionHead">
+            <button class="btn btnPrimary btnSm" id="btnNewThread">+ Start a discussion</button>
+          </div>
+          <div class="list" id="forumList"><div class="emptyState">Loading discussions…</div></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ===================== PRE-MEETING TYPE SELECTOR ===================== -->
+  <div class="preMeetingWrap hidden" id="preMeetingWrap">
+    <div class="preMeetingCard">
+      <div class="preMeetingHeader">
+        <div class="preMeetingLogo">🟢</div>
+        <h2 class="preMeetingTitle" id="preMeetingTitle">Start a Meeting</h2>
+        <p class="preMeetingSubtitle">Choose your meeting type</p>
+      </div>
+      <div class="meetTypeGrid">
+        <button class="meetTypeBtn" id="mtType1on1" data-type="1on1">
+          <span class="meetTypeIcon">👤</span>
+          <span class="meetTypeName">1-on-1</span>
+          <span class="meetTypeDesc">Private with one person</span>
+        </button>
+        <button class="meetTypeBtn" id="mtTypeSmall" data-type="small">
+          <span class="meetTypeIcon">👥</span>
+          <span class="meetTypeName">Small Group</span>
+          <span class="meetTypeDesc">2 to 10 participants</span>
+        </button>
+        <button class="meetTypeBtn" id="mtTypeLarge" data-type="large">
+          <span class="meetTypeIcon">🏟️</span>
+          <span class="meetTypeName">Large Room</span>
+          <span class="meetTypeDesc">10 or more participants</span>
+        </button>
+      </div>
+      <div class="preMeetingActions">
+        <button class="preMeetingStart hidden" id="btnPreMeetingGo">
+          <span id="preMeetingBtnIcon">▶</span> Start Meeting
+        </button>
+        <button class="preMeetingCancel" id="btnPreMeetingCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== CALL / MEETING MODAL (custom control bar) ===================== -->
+  <div class="callFrameWrap hidden" id="callFrameWrap">
+    <!-- Top bar -->
+    <div class="callTopBar">
+      <div class="callTopLeft">
+        <span class="callRecDot hidden" id="callRecDot"></span>
+        <span class="callTitle" id="callTitleText">Meeting</span>
+      </div>
+      <div class="callTopRight">
+        <span class="callTimer" id="callTimer">00:00</span>
+        <span class="callParticipantCount" id="callParticipantCount">👤 1</span>
+      </div>
+    </div>
+
+    <!-- Jitsi iframe (hidden UI, we control everything) -->
+    <div class="jitsiContainer" id="jitsiContainer"></div>
+
+    <!-- Bottom control bar — green themed -->
+    <div class="callControlBar">
+      <button class="callCtrlBtn" id="btnToggleMic">
+        <div class="callCtrlCircle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm-1 1.93V18H9v2h6v-2h-2v-2.07A5 5 0 0 0 17 11h-2a3 3 0 0 1-6 0H7a5 5 0 0 0 4 4.93z"/></svg>
+        </div>
+        <span id="micLabel">Mute</span>
+      </button>
+      <button class="callCtrlBtn" id="btnToggleCam">
+        <div class="callCtrlCircle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+        </div>
+        <span id="camLabel">Video</span>
+      </button>
+      <button class="callCtrlBtn" id="btnToggleChatCall">
+        <div class="callCtrlCircle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>
+        </div>
+        <span>Chat</span>
+      </button>
+      <button class="callCtrlBtn hidden" id="btnToggleShare">
+        <div class="callCtrlCircle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20 18H4V6h8V4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8h-2v8zM14 4v3h3.59l-9.83 9.83 1.41 1.41L19 8.41V12h2V4h-7z"/></svg>
+        </div>
+        <span>Share</span>
+      </button>
+      <button class="callCtrlBtn callCtrlBtn--leave" id="btnLeaveCall">
+        <div class="callCtrlCircle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24 11.47 11.47 0 0 0 3.58.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.58a1 1 0 0 1-.25 1.01L6.62 10.79z"/></svg>
+        </div>
+        <span>Leave</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Generic modal -->
+  <div class="modalOverlay hidden" id="modalOverlay">
+    <div class="modalCard" id="modalCard"></div>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <!-- Incoming voice call banner -->
+  <div class="incomingCallBar hidden" id="incomingCallBar">
+    <span id="incomingCallText">Incoming call</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn btnPrimary btnSm" id="btnAcceptCall">Accept</button>
+      <button class="btn btnDanger btnSm" id="btnDeclineCall">Decline</button>
+    </div>
+  </div>
+
+  <!-- Cross-device call handoff banner: shown when this account has an active
+       voice call in progress on another device/tab -->
+  <div class="incomingCallBar hidden" id="handoffCallBar" style="top:auto;bottom:90px">
+    <span>You have an active call in progress on another device</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn btnPrimary btnSm" id="btnRejoinCall">Join here</button>
+      <button class="btn btnGhost btnSm" id="btnDismissHandoff">Dismiss</button>
+    </div>
+  </div>
+
+  <!-- Profile view (click a name/avatar to see bio) -->
+  <div class="profileViewOverlay hidden" id="profileViewOverlay">
+    <div class="profileViewTop">
+      <button class="btn btnGhost btnSm" id="btnProfileViewBack">‹ Back</button>
+    </div>
+    <div class="profileViewBody" id="profileViewBody"></div>
+  </div>
+
+  <script src="supabase.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
