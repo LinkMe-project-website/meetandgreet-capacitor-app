@@ -2,11 +2,6 @@
   "appId": "com.meetandgreet.app",
   "appName": "VORTEXIA",
   "webDir": "www",
-  "server": {
-    "url": "https://linkme-project-website.github.io/SMMT-advance/",
-    "cleartext": false,
-    "androidScheme": "https"
-  },
   "android": {
     "backgroundColor": "#0A2463"
   }
