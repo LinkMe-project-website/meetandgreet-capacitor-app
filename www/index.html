@@ -4,10 +4,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>VORTEXIA — Where Every Opportunity Meets You</title>
-    <script type="module" crossorigin src="/assets/index-Csp7k7Yz.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Dtf6zQ2e.css">
+    <script type="module" crossorigin src="/assets/index-RdbZctdm.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DCTKESPH.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="pre-react-status" style="font-family:sans-serif;padding:20px;color:#888">
+        Loading VORTEXIA…
+      </div>
+    </div>
+    <script>
+      window.addEventListener("error", function (e) {
+        var el = document.getElementById("pre-react-status");
+        if (el) {
+          el.innerHTML =
+            "<b>Script error:</b><br>" +
+            (e.message || "unknown") + "<br>" +
+            (e.filename ? e.filename + ":" + e.lineno : "");
+        }
+      });
+      window.addEventListener("unhandledrejection", function (e) {
+        var el = document.getElementById("pre-react-status");
+        if (el) {
+          el.innerHTML = "<b>Unhandled promise rejection:</b><br>" + (e.reason && e.reason.message ? e.reason.message : String(e.reason));
+        }
+      });
+      setTimeout(function () {
+        var el = document.getElementById("pre-react-status");
+        if (el && el.textContent.indexOf("Loading VORTEXIA") !== -1) {
+          el.innerHTML = "<b>React did not start.</b><br>The app bundle may have failed to load. Check your connection.";
+        }
+      }, 3000);
+    </script>
   </body>
 </html>
