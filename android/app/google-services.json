@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "88627018007",
+    "project_id": "vortexia-s",
+    "storage_bucket": "vortexia-s.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:88627018007:android:ab00522dd08a29639b9f52",
+        "android_client_info": {
+          "package_name": "com.meetandgreet.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWW_uIbpFgi8nJ1S27y47FgxS4C2EJOl8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
