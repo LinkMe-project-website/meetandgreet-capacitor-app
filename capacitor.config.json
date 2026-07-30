@@ -3,6 +3,17 @@
   "appName": "VORTEXIA",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#0A2463"
+    "backgroundColor": "#0A2463",
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "Camera": {
+      "presentationStyle": "fullscreen"
+    }
   }
 }
